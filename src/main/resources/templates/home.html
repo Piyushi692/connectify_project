@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+             padding-top: 60px;
+        }
+         .navbar {
+            margin-bottom: 20px;
+        }
+        .navbar .navbar-nav {
+            margin-left: 40px;
+        }
+        .navbar .navbar-nav .nav-item {
+            width: auto;
+            height: auto;
+            padding: 8px 8px;
+        }
+
+        .navbar .navbar-nav .nav-link {
+            font-size: 15px;
+            padding: 5px 5px;
+        }
+
+        .navbar .navbar-nav .nav-link i {
+            font-size: 20px;
+        }
+
+
+        .post-container {
+                display: flex;
+                justify-content: center; /* Centers the post horizontally */
+                align-items: center; /* Centers the post vertically */
+                padding: 20px; /* Optional: Adds padding around the container */
+            }
+
+            .post {
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                padding: 15px;
+                margin-bottom: 20px;
+                background-color: #f9f9f9;
+                width: 100%;
+                max-width: 700px; /* Set a fixed width */
+                height: 700px; /* Set a fixed height */
+                overflow: hidden; /* Hide any overflow content */
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                margin: 0 auto; /* Centers the post horizontally */
+            }
+
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .post-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .post-header .username {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .post h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .post p {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            height: 50px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .post img {
+            width: 100%;
+            height: 400px; /* Fixed height for images */
+            object-fit: cover; /* Ensures images cover the area without distortion */
+            margin-bottom: 10px; /* Adjusted spacing */
+            border-radius: 5px;
+        }
+
+        .post-footer {
+            margin-top: auto;
+            padding-top: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .comments-container {
+            margin-top: 15px;
+        }
+        .comment {
+            border-top: 1px solid #ddd;
+            padding: 10px 0;
+            margin-top: 5px;
+        }
+        .comment textarea {
+            width: 50%;
+            margin-top: 10px;
+        }
+        .btn-custom {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+
+    <a class="navbar-brand" href="#">FriendBook</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/home"><i class="fa-solid fa-house"></i></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-toggle="modal" data-target="#createPostModal"><i class="fa-solid fa-plus"></i></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-toggle="modal" data-target="#requestsModal"><i class="fa-solid fa-user-plus"></i></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-toggle="modal" data-target="#searchModal"><i class="fa-solid fa-magnifying-glass"></i></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" data-toggle="modal" data-target="#notificationModal">
+                    <i class="fa-solid fa-bell"></i>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/api/users/profile">
+                    <img th:src="${profileImage}" class="rounded-circle mr-3" style="width: 30px; height: 30px;">
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="post-container">
+    <div id="posts">
+        <div th:each="post : ${allPosts}" class="post" id="post-[[${post.id}]]">
+            <div class="post-header">
+                <img th:src="@{${post.getUser().getImage()}}" class="rounded-circle mr-3" style="width: 40px; height: 40px;"/>
+                <a th:href="@{/api/users/viewProfile/{username}(username=${post.user.username})}" class="username"
+                   th:text="${post.user.username}">Username</a>
+            </div>
+            <img th:src="@{${post.imagePost}}" alt="Post Image"/>
+            <p th:text="${post.caption}">Post Content</p>
+
+            <div class="actions">
+
+                <span  id="likeButton"
+                        th:id="'like-btn-' + ${post.id}"
+                        th:onclick="'toggleLike(' + ${post.id} + ')'"
+                        th:style="${likedPostsMap[post.id] ? 'display:none;' : 'display:block;'}">
+                    <i class="fa-regular fa-heart"></i>
+                </span>
+
+                <span  id="unlikeButton"
+                        th:id="'unlike-btn-' + ${post.id}"
+                        th:onclick="'toggleUnLike(' + ${post.id} + ')'"
+                        th:style="${likedPostsMap[post.id] ? 'display:block;' : 'display:none;'}">
+                        <i class="fa-solid fa-heart"></i>
+                </span>
+
+                <span th:id="'like-count-' + ${post.id}"
+                     th:onclick="'loadLikedUsers(' + ${post.id} + ')'">
+                    <span th:text="${post.likedByUser.size()}"></span>
+                </span>
+                    <span data-toggle="modal"
+                            data-target="#commentsModal"
+                            th:onclick="'loadComments(' + ${post.id} + ')'">
+                        <i class="fa-regular fa-comment"></i>
+                         <span th:id="'comment-count-' + ${post.id}"
+                               th:text="${post.comments.size()}"></span>
+                    </span>
+            </div>
+            <form id="commentForm-${post.id}" class="comment-form">
+                <textarea th:id="'commentContent-'+ ${post.id}" name="content" class="form-control" placeholder="Add a comment"></textarea>
+                <button type="button" class="btn btn-success btn-custom" th:onclick="'submitComment('+${post.id}+')'">Add Comment</button>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createPostModal" tabindex="-1" role="dialog" aria-labelledby="createPostModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createPostModalLabel">Create a New Post</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="createPostForm">
+                    <div class="form-group">
+                        <label for="postContent">Post Content</label>
+                        <textarea id="postContent" class="form-control" rows="3" placeholder="What's on your mind?"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="postImageUrl">Image URL</label>
+                        <input type="text" id="postImageUrl" class="form-control" placeholder="Enter image URL" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="postButton">Post</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="commentsModal" tabindex="-1" role="dialog" aria-labelledby="commentsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="commentsModalLabel">Comments</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="commentsContainer">
+                    <ul id="commentsList" class="list-group">
+                        <!-- Comments will be loaded here dynamically -->
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="notificationModal" tabindex="-1" role="dialog" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">Notifications</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul id="notificationList" class="list-group">
+
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="searchModalLabel">Search Users</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="searchForm">
+                    <div class="form-group">
+                        <input type="text" id="searchQuery" class="form-control" placeholder="Enter username or email" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+
+                <div id="search-results">
+                    <!-- Results will show here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="likesModal" tabindex="-1" role="dialog" aria-labelledby="likesModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="likesModalLabel">Users who liked this post</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul id="likedUsersList" class="list-group">
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="requestsModal" tabindex="-1" role="dialog" aria-labelledby="requestsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="requestsModalLabel">Follow Requests</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="requests-results">
+                    <div th:if="${allRequests == null || #lists.isEmpty(allRequests)}">
+                        <p>No follow requests.</p>
+                    </div>
+                    <div th:each="user : ${allRequests}" class="user-card">
+                        <h4 th:text="${user.username}">Username</h4>
+                        <p th:text="${user.name}">User Full Name</p>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-success"
+                                    th:onclick="'acceptRequest(' + ${user.id} + ')'">Accept</button>
+                            <button type="button" class="btn btn-danger"
+                                    th:onclick="'declineRequest(' + ${user.id} + ')'">Decline</button>
+
+                            <button type="button" th:if="${!isFollowingMap[user.id] && !isInRequestMap[user.id]}"
+                                    class="btn btn-primary"
+                                    th:onclick="'sendFollowRequest(' + ${user.id} + ')'">Follow</button>
+                            <button type="button" th:if="${!isFollowingMap[user.id] && isInRequestMap[user.id]}"
+                                    class="btn btn-primary"
+                                     disabled>requested</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+
+    function submitComment(postId) {
+        const commentContent = $(`#commentContent-${postId}`).val();
+        console.log(commentContent);
+        if (commentContent.trim() === '') {
+            alert('Comment cannot be empty.');
+            return;
+        }
+
+        $.ajax({
+            url: `/api/comments/${postId}/comment`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ content: commentContent }),
+            success: function(response) {
+                alert(response);
+                loadComments(postId);
+                 const commentCountElement = $(`#comment-count-${postId}`);
+            let currentCount = parseInt(commentCountElement.text()) || 0;
+            commentCountElement.text(currentCount + 1);
+                $(`#commentContent-${postId}`).val('');
+
+            },
+            error: function(jqXHR) {
+                alert('Error adding comment: ' + jqXHR.responseText);
+            }
+        });
+    }
+        function loadComments(postId) {
+         console.log(postId);
+            if (postId) {
+                console.log('Post ID:', postId);
+                $.ajax({
+                    url: `/api/comments/getCommentsByPostId/${postId}`,
+                    type: 'GET',
+                    success: function(response) {
+                        if (Array.isArray(response)) {
+                            $('#commentsList').empty();
+
+                            response.forEach(function(comment) {
+                                const profileImage = comment.user.image;
+                                console.log(comment);
+                                console.log(comment.user.username);
+                                console.log("come load comments");
+                                const listItem = `
+                                    <li class="list-group-item">
+                                        <div class="d-flex align-items-center">
+                                             <a href="/api/users/viewProfile/${comment.user.username}">
+                                                <img src="${profileImage}" class="rounded-circle mr-3" style="width: 40px; height: 40px;">
+                                                <div>
+                                                    <p><b>${comment.user.username}</b></p>
+                                                    <p>${comment.content}</p>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    </li>`;
+                                $('#commentsList').append(listItem);
+                            });
+                            $('#postModal').modal('hide');
+                            $('#commentsModal').modal('show');
+                        } else {
+                            console.error('Expected an array of comments but got:', response);
+                        }
+                    },
+                    error: function(err) {
+                        console.log('Error:', err.responseText);
+                        alert('Failed to load comments.');
+                    }
+                });
+            } else {
+                console.error('Post ID is null or undefined');
+            }
+        }
+
+
+            $(document).ready(function() {
+               $('#notificationModal').on('show.bs.modal', function () {
+                   $.ajax({
+                       url: '/api/notifications',
+                       type: 'GET',
+                       success: function(notifications) {
+                           $('#notificationList').empty();
+                           if (notifications.length === 0) {
+                               $('#notificationList').append('<li class="list-group-item">No notifications.</li>');
+                           } else {
+                               notifications.forEach(function(notification) {
+
+                                const listItem = `
+                                   <li class="list-group-item d-flex align-items-center">
+                                      <a action="/api/users/viewProfile/${notification.fromUsername}">
+                                          <img src="${notification.userImage}" class="rounded-circle mr-3" style="width: 40px; height: 40px;">
+                                           <span>${notification.message}</span>
+                                       </a>
+                                   </li>`;
+                                   $('#notificationList').append(
+                                       listItem
+                                   );
+                               });
+                           }
+                       },
+                       error: function(xhr, status, error) {
+                           console.error('Failed to fetch notifications:', error);
+                           $('#notificationList').empty();
+                           $('#notificationList').append('<li class="list-group-item text-danger">Failed to load notifications. Please try again later.</li>');
+                       }
+                   });
+               });
+            });
+
+            $(document).ready(function() {
+               $('#searchForm').submit(function(event) {
+                   event.preventDefault();
+                   const query = $('#searchQuery').val();
+
+                   $.ajax({
+                       url: '/home/search',
+                       type: 'POST',
+                       data: { q: query },
+                       success: function(users) {
+                           $('#search-results').empty();
+                           if (users.length === 0) {
+                               $('#search-results').append('<p>No users found.</p>');
+                           } else {
+                               users.forEach(function(user) {
+                                   $('#search-results').append(
+                                       `<div class="user-card">
+                                           <h2>${user.username}</h2>
+                                           <p>${user.name}</p>
+                                           <a href="/api/users/viewProfile/${user.username}" class="btn btn-info">View Profile</a>
+                                       </div>`
+                                   );
+                               });
+                           }
+                       },
+                       error: function(xhr, status, error) {
+                           console.error('Search failed:', error);
+                           $('#search-results').empty();
+                           $('#search-results').append('<p>Failed to retrieve users. Please try again later.</p>');
+                       }
+                   });
+               });
+            });
+
+
+        function toggleLike(postId) {
+            console.log(postId);
+            const url = `/api/posts/${postId}/like`;
+            const likeButton = $(`#like-btn-${postId}`);
+            const unlikeButton = $(`#unlike-btn-${postId}`);
+            const likeCount = $(`#like-count-${postId} span`);
+
+            $.ajax({
+               url: url,
+               type: 'POST',
+               success: function(response) {
+                   console.log(response);
+                   if (response.liked) {
+                       likeButton.hide();
+                       unlikeButton.show();
+                   } else {
+                       likeButton.show();
+                       unlikeButton.hide();
+                   }
+                   likeCount.text(response.likeCount);
+               },
+               error: function(err) {
+                   console.log('Error:', err.responseText);
+                   alert('Failed to update like status.');
+               }
+            });
+        }
+
+        function toggleUnLike(postId) {
+            const url = `/api/posts/${postId}/unlike`;
+            const likeButton = $(`#like-btn-${postId}`);
+            const unlikeButton = $(`#unlike-btn-${postId}`);
+            const likeCount = $(`#like-count-${postId} span`);
+
+            $.ajax({
+               url: url,
+               type: 'POST',
+               success: function(response) {
+                   if (response.liked) {
+                       likeButton.hide();
+                       unlikeButton.show();
+                   } else {
+                       likeButton.show();
+                       unlikeButton.hide();
+                   }
+                   likeCount.text(response.likeCount);
+               },
+               error: function(err) {
+                   console.log('Error:', err.responseText);
+                   alert('Failed to update like status.');
+               }
+            });
+        }
+
+        function loadLikedUsers(postId) {
+            if (postId) {
+               console.log('Post ID:', postId);
+               $.ajax({
+                   url: `/api/posts/${postId}/likedUser`,
+                   type: 'GET',
+                   success: function(response) {
+                       if (Array.isArray(response)) {
+                           $('#likedUsersList').empty();
+
+                           response.forEach(function(user) {
+                               const profileImage = user.image;
+                               const listItem = `
+                                   <li class="list-group-item d-flex align-items-center">
+                                      <a href="/api/users/viewProfile/${user.username}">
+                                       <img src="${user.image}" alt="${user.username}" class="rounded-circle mr-3" style="width: 40px; height: 40px;">
+                                       <span>${user.username}</span>
+                                       </a>
+                                   </li>`;
+                               $('#likedUsersList').append(listItem);
+                           });
+                           $('#likesModal').modal('show');
+                       } else {
+                           console.error('Expected an array of users but got:', response);
+                       }
+                   },
+                   error: function(err) {
+                       console.log('Error:', err.responseText);
+                       alert('Failed to load liked users.');
+                   }
+               });
+            } else {
+               console.error('Post ID is null or undefined');
+            }
+        }
+
+         function acceptRequest(userId) {
+            $.ajax({
+                url: `/api/users/accept/${userId}`,
+                type: 'POST',
+                success: function() {
+                    location.reload();
+                },
+                error: function(err) {
+                    console.error('Error accepting request:', err.responseText);
+                    alert('Failed to accept request.');
+                }
+            });
+        }
+
+        function declineRequest(userId) {
+            $.ajax({
+                url: `/api/users/decline/${userId}`,
+                type: 'POST',
+                success: function() {
+                    location.reload();
+                },
+                error: function(err) {
+                    console.error('Error declining request:', err.responseText);
+                    alert('Failed to decline request.');
+                }
+            });
+        }
+
+        function sendFollowRequest(userId) {
+            $.ajax({
+                url: `/api/users/sendRequest/${userId}`,
+                type: 'POST',
+                success: function() {
+                console.log("come in function");
+                    location.reload();
+                },
+                error: function(err) {
+                    console.error('Error sending follow request:', err.responseText);
+                    alert('Failed to send follow request.');
+                }
+            });
+        }
+
+
+        $(document).ready(function() {
+            const userEmail = sessionStorage.getItem('userEmail');
+
+            function createPost() {
+                const postContent = $('#postContent').val();
+                const postImageUrl = $('#postImageUrl').val();
+               if (!postImageUrl) {
+                    alert('Image URL is required.');
+                    return;
+               }
+               else{
+                    const postData = {
+                        caption: postContent,
+                        imagePost: postImageUrl,
+                    };
+
+                    $.ajax({
+                        url: '/api/posts/create',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(postData),
+                        headers: {
+                            'email': userEmail
+                        },
+                        success: function(response) {
+                            alert('Post created successfully!');
+                            $('#createPostModal').modal('hide');
+                            window.location.href = '/home';
+                        },
+                        error: function(xhr) {
+                            alert('Failed to create post: ' + xhr.responseText);
+                        }
+                    });
+                }
+            }
+            $('#postButton').click(createPost);
+        });
+
+
+</script>
+
+</body>
+</html>
